@@ -14,8 +14,8 @@ app.get("/api/consulta-cpf", async (req, res) => {
   const apiKey = process.env.CPF_API_KEY;
   
   if (!apiKey) {
-    console.error('CPF_API_KEY is not set in environment variables.');
-    return res.status(500).json({ error: "Configuração incompleta: Chave API não encontrada. Por favor, insira sua chave nas configurações." });
+    console.error('CPF_API_KEY is not set in environment variables. Available env keys:', Object.keys(process.env).filter(k => !k.includes('SECRET') && !k.includes('KEY')));
+    return res.status(500).json({ error: "Configuração incompleta: Chave API de CPF não encontrada. Por favor, insira CPF_API_KEY nas configurações da Vercel." });
   }
 
   if (!cleanCpf) {
@@ -148,12 +148,12 @@ app.get("/api/consulta-cpf", async (req, res) => {
 // API Route for Payment Creation (Carteira do 7)
 app.post("/api/create-payment", async (req, res) => {
   const { amount, name, cpf } = req.body;
-  const apiKey = process.env.PAYMENT_API_KEY;
-  const apiSecret = process.env.PAYMENT_API_SECRET;
+  const apiKey = process.env.CHAVE_API_DE_PAGAMENTO || process.env.PAYMENT_API_KEY;
+  const apiSecret = process.env.SEGREDO_DA_API_DE_PAGAMENTO || process.env.PAYMENT_API_SECRET;
 
   if (!apiKey || !apiSecret) {
-    console.log('PAYMENT_API_KEY or PAYMENT_API_SECRET is missing!');
-    return res.status(500).json({ error: "Configuração de pagamento incompleta: Chave API ou Secret não encontrados nas configurações." });
+    console.log('Payment API credentials missing. Checked CHAVE_API_DE_PAGAMENTO and PAYMENT_API_KEY.');
+    return res.status(500).json({ error: "Configuração de pagamento incompleta: Chave API ou Secret não encontrados nas configurações da Vercel." });
   }
 
   try {
@@ -163,7 +163,7 @@ app.post("/api/create-payment", async (req, res) => {
     const baseUrl = `${protocol}://${host}`;
     
     const body = JSON.stringify({
-      amount: amount, // Decimal value as per user example (e.g. 150.00)
+      amount: Number(amount).toFixed(2), // Ensure string format with 2 decimals (e.g. "150.00")
       externalId: `loan_${Date.now()}`,
       callbackUrl: `${baseUrl}/api/webhook`,
       description: "Tarifa de Seguro Bancred",
@@ -236,7 +236,7 @@ app.post("/api/create-payment", async (req, res) => {
 // API Route for Payment Status (Carteira do 7)
 app.get("/api/payment-status/:id", async (req, res) => {
   const { id } = req.params;
-  const apiKey = process.env.PAYMENT_API_KEY;
+  const apiKey = process.env.CHAVE_API_DE_PAGAMENTO || process.env.PAYMENT_API_KEY;
 
   if (!apiKey) {
     return res.status(500).json({ error: "Configuração de pagamento incompleta." });

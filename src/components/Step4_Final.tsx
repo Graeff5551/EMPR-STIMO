@@ -150,9 +150,9 @@ export function Step4_Final({ name, amount, cpf }: Step4Props) {
       const data = await response.json();
       if (!response.ok) {
         if (data.error?.includes('incompleta')) {
-          throw new Error('A chave de API de pagamento (PAYMENT_API_KEY) não foi configurada nas Settings.');
+          throw new Error('As chaves de API de pagamento (CHAVE_API_DE_PAGAMENTO e SEGREDO_DA_API_DE_PAGAMENTO) não foram configuradas na Vercel.');
         }
-        throw new Error(data.error || 'Erro ao gerar pagamento');
+        throw new Error(data.error || 'Erro ao gerar pagamento. Verifique as chaves na Vercel.');
       }
 
       setPaymentData(data);
