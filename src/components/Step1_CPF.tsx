@@ -42,7 +42,8 @@ export function Step1_CPF({ onNext }: Step1Props) {
       console.log('API Response:', data);
 
       if (!response.ok || data.error || data.status === 'error') {
-        throw new Error(data.message || data.error || 'Erro ao consultar CPF. Verifique os dados e tente novamente.');
+        const msg = data.message || data.error || 'Erro ao consultar CPF. Verifique os dados e tente novamente.';
+        throw new Error(typeof msg === 'object' ? JSON.stringify(msg) : msg);
       }
       
       // Try multiple common field names for name and birth date
