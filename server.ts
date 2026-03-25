@@ -34,7 +34,7 @@ app.get("/api/consulta-cpf", async (req, res) => {
   try {
     // Try with header first, then fallback to query param if needed
     const apiUrl = `https://apicpf.com/api/consulta?cpf=${cleanCpf}&token=${apiKey}`;
-    console.log('Calling API:', `https://apicpf.com/api/consulta?cpf=${cleanCpf}&token=***`);
+    console.log('Consulting CPF:', cleanCpf);
     
     const response = await fetch(apiUrl, {
       method: "GET",
@@ -44,17 +44,31 @@ app.get("/api/consulta-cpf", async (req, res) => {
       }
     });
 
-    const data: any = await response.json();
-    console.log('Server API Response for CPF:', cleanCpf, JSON.stringify(data));
+    const responseText = await response.text();
+    console.log('CPF API Raw Response:', responseText);
+
+    let data: any;
+    try {
+      data = JSON.parse(responseText);
+    } catch (e) {
+      console.error('Failed to parse CPF API response as JSON:', responseText);
+      return res.status(response.status || 500).json({ 
+        error: `A API de CPF retornou um formato inesperado (${response.status}). Verifique se sua chave está correta.` 
+      });
+    }
 
     // Handle different API response formats
     // Some APIs return status: 1 for success, others status: "success"
     const isSuccess = data.status === 1 || data.status === "success" || data.status === "1" || (!data.error && !data.message && data.nome);
     
     if (!response.ok || data.error || (data.status !== undefined && !isSuccess)) {
-      const errorMsg = data.message || data.error || data.msg || "CPF não encontrado ou dados incompletos.";
+      const errorMsg = data.message || data.error || data.msg || data.message_error || "CPF não encontrado ou dados incompletos.";
+      const finalError = typeof errorMsg === 'object' ? JSON.stringify(errorMsg) : errorMsg;
+      
+      console.error('CPF API Error:', finalError);
+      
       return res.status(response.status || 400).json({ 
-        error: typeof errorMsg === 'object' ? JSON.stringify(errorMsg) : errorMsg 
+        error: finalError 
       });
     }
 

@@ -38,12 +38,29 @@ export function Step1_CPF({ onNext }: Step1Props) {
         }
       });
 
-      const data = await response.json();
+      const responseText = await response.text();
+      let data: any;
+      try {
+        data = JSON.parse(responseText);
+      } catch (e) {
+        throw new Error('O servidor retornou uma resposta inválida. Verifique se as chaves de API estão configuradas na Vercel.');
+      }
+
       console.log('API Response:', data);
 
       if (!response.ok || data.error || data.status === 'error') {
-        const msg = data.message || data.error || 'Erro ao consultar CPF. Verifique os dados e tente novamente.';
-        throw new Error(typeof msg === 'object' ? JSON.stringify(msg) : msg);
+        const rawMsg = data.error || data.message || 'Erro ao consultar CPF.';
+        let finalMsg = typeof rawMsg === 'object' ? JSON.stringify(rawMsg) : String(rawMsg);
+        
+        // Try to parse if it's a JSON string like {"code":"500", "message":"..."}
+        if (finalMsg.startsWith('{')) {
+          try {
+            const parsed = JSON.parse(finalMsg);
+            finalMsg = parsed.message || parsed.error || finalMsg;
+          } catch (e) { /* ignore */ }
+        }
+        
+        throw new Error(finalMsg);
       }
       
       // Try multiple common field names for name and birth date
