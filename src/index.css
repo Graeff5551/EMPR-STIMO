@@ -1,0 +1,26 @@
+@import "tailwindcss";
+
+@theme {
+  --color-bancred-blue: #0056b3;
+  --color-bancred-green: #28a745;
+  --color-bancred-light: #f8f9fa;
+  
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+}
+
+@layer base {
+  body {
+    @apply bg-bancred-light text-slate-900 antialiased;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-bancred-blue text-white font-semibold py-3 px-6 rounded-lg transition-all active:scale-95 disabled:opacity-50 disabled:active:scale-100;
+  }
+  
+  .card {
+    @apply bg-white p-6 rounded-xl shadow-sm border border-slate-100;
+  }
+}
+
