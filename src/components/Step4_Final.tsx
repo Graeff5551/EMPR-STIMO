@@ -147,7 +147,15 @@ export function Step4_Final({ name, amount, cpf }: Step4Props) {
         })
       });
 
-      const data = await response.json();
+      const responseText = await response.text();
+      let data: any;
+      try {
+        data = JSON.parse(responseText);
+      } catch (e) {
+        console.error('Parse error:', responseText);
+        throw new Error(`O servidor retornou uma resposta inválida (HTML/Texto). Isso pode ser um erro na Vercel. Resposta: ${responseText.substring(0, 100)}...`);
+      }
+
       if (!response.ok) {
         if (data.code === 'CONFIG_ERROR' || data.error?.includes('incompleta')) {
           throw new Error('Configuração de pagamento ausente. Você precisa adicionar CHAVE_API_DE_PAGAMENTO e SEGREDO_DA_API_DE_PAGAMENTO nas variáveis de ambiente da Vercel.');
