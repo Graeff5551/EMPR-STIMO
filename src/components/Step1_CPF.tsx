@@ -43,7 +43,8 @@ export function Step1_CPF({ onNext }: Step1Props) {
       try {
         data = JSON.parse(responseText);
       } catch (e) {
-        throw new Error('O servidor retornou uma resposta inválida. Verifique se as chaves de API estão configuradas na Vercel.');
+        console.error('Parse error:', responseText);
+        throw new Error('O servidor retornou uma resposta inválida. Isso pode ser um erro temporário na Vercel ou na API de CPF.');
       }
 
       console.log('API Response:', data);
@@ -123,17 +124,15 @@ export function Step1_CPF({ onNext }: Step1Props) {
           <div className="space-y-3">
             <div className="flex items-center gap-2 text-red-600 text-sm font-medium bg-red-50 p-3 rounded-lg border border-red-100">
               <AlertCircle size={18} />
-              <span>{error}</span>
+              <span className="text-left">{error}</span>
             </div>
             
-            {(error.includes('inválido') || error.includes('não encontrado') || error.includes('incompletos')) && (
-              <button
-                onClick={handleDemoMode}
-                className="w-full text-sm text-bancred-blue font-bold hover:underline py-2"
-              >
-                Continuar com dados de teste (Modo Demo)
-              </button>
-            )}
+            <button
+              onClick={handleDemoMode}
+              className="w-full text-sm text-bancred-blue font-bold hover:underline py-2 bg-slate-50 rounded-lg border border-slate-200"
+            >
+              Continuar com dados de teste (Modo Demo)
+            </button>
           </div>
         )}
 

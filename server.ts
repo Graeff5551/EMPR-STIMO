@@ -36,13 +36,20 @@ app.get("/api/consulta-cpf", async (req, res) => {
     const apiUrl = `https://apicpf.com/api/consulta?cpf=${cleanCpf}&token=${apiKey}`;
     console.log('Consulting CPF:', cleanCpf);
     
+    // Add a timeout to the fetch call
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 seconds timeout
+
     const response = await fetch(apiUrl, {
       method: "GET",
       headers: {
         "X-API-KEY": apiKey,
         "Accept": "application/json"
-      }
+      },
+      signal: controller.signal
     });
+    
+    clearTimeout(timeoutId);
 
     const responseText = await response.text();
     console.log('CPF API Raw Response:', responseText);
@@ -129,9 +136,12 @@ app.get("/api/consulta-cpf", async (req, res) => {
     }
 
     res.json(result);
-  } catch (error) {
+  } catch (error: any) {
     console.error("Server API Error:", error);
-    res.status(500).json({ error: "Erro interno no servidor ao consultar CPF." });
+    if (error.name === 'AbortError') {
+      return res.status(504).json({ error: "A API de consulta de CPF demorou muito para responder. Tente novamente ou use o Modo Demo." });
+    }
+    res.status(500).json({ error: "Erro interno no servidor ao consultar CPF. Verifique se as variáveis de ambiente estão configuradas." });
   }
 });
 
@@ -260,7 +270,8 @@ app.get("/api/payment-status/:id", async (req, res) => {
   }
 });
 
-async function startServer() {
+// Setup server startup and middleware
+async function setupServer() {
   // Vite middleware for development
   if (process.env.NODE_ENV !== "production") {
     const { createServer: createViteServer } = await import("vite");
@@ -269,21 +280,33 @@ async function startServer() {
       appType: "spa",
     });
     app.use(vite.middlewares);
+    
+    // Only listen if we are running directly (not on Vercel)
+    if (!process.env.VERCEL) {
+      app.listen(PORT, "0.0.0.0", () => {
+        console.log(`Server running on http://localhost:${PORT}`);
+      });
+    }
   } else {
-    const distPath = path.join(process.cwd(), "dist");
-    app.use(express.static(distPath));
-    app.get("*", (req, res) => {
-      res.sendFile(path.join(distPath, "index.html"));
-    });
-  }
-
-  if (process.env.NODE_ENV !== "production") {
-    app.listen(PORT, "0.0.0.0", () => {
-      console.log(`Server running on http://localhost:${PORT}`);
-    });
+    // In production, we only serve static files if NOT on Vercel
+    // Vercel serves static files itself via vercel.json or default behavior
+    if (!process.env.VERCEL) {
+      const distPath = path.join(process.cwd(), "dist");
+      app.use(express.static(distPath));
+      app.get("*", (req, res) => {
+        res.sendFile(path.join(distPath, "index.html"));
+      });
+      
+      app.listen(PORT, "0.0.0.0", () => {
+        console.log(`Server running on http://localhost:${PORT}`);
+      });
+    }
   }
 }
 
-startServer();
+// Initialize server setup
+setupServer().catch(err => {
+  console.error("Failed to setup server:", err);
+});
 
 export default app;
