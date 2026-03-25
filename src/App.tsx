@@ -46,81 +46,8 @@ export default function App() {
     setStep(next);
   };
 
-  const getProgress = () => {
-    switch (step) {
-      case 'cpf': return 0;
-      case 'user_data': return 7.7;
-      case 'reason': return 15.4;
-      case 'details': return 23.1;
-      case 'credit_status': return 30.8;
-      case 'simulation': return 38.5;
-      case 'payment_day': return 46.2;
-      case 'analysis': return 53.8;
-      case 'approved': return 61.5;
-      case 'pix_info': return 69.2;
-      case 'dashboard': return 76.9;
-      case 'withdraw_options': return 84.6;
-      case 'final': return 100;
-      default: return 0;
-    }
-  };
-
-  const getStepNumber = () => {
-    switch (step) {
-      case 'cpf': return 1;
-      case 'user_data': return 2;
-      case 'reason': return 3;
-      case 'details': return 4;
-      case 'credit_status': return 5;
-      case 'simulation': return 6;
-      case 'payment_day': return 7;
-      case 'analysis': return 8;
-      case 'approved': return 9;
-      case 'pix_info': return 10;
-      case 'dashboard': return 11;
-      case 'withdraw_options': return 12;
-      case 'final': return 13;
-      default: return 0;
-    }
-  };
-
-  // Temporary Navigation for Preview
-  const steps: Step[] = ['cpf', 'user_data', 'reason', 'details', 'credit_status', 'simulation', 'payment_day', 'analysis', 'approved', 'pix_info', 'dashboard', 'withdraw_options', 'final'];
-  const currentStepIndex = steps.indexOf(step);
-
-  const goToPrev = () => {
-    if (currentStepIndex > 0) setStep(steps[currentStepIndex - 1]);
-  };
-
-  const goToNext = () => {
-    if (currentStepIndex < steps.length - 1) setStep(steps[currentStepIndex + 1]);
-  };
-
   return (
     <div className="min-h-screen flex flex-col">
-      {/* Dev Navigation Tool */}
-      <div className="fixed bottom-20 right-4 z-[100] flex flex-col gap-2 bg-slate-900/80 backdrop-blur-md p-2 rounded-xl border border-white/20 shadow-2xl">
-        <p className="text-[10px] text-white/60 font-bold uppercase text-center mb-1">Dev Nav</p>
-        <div className="flex gap-2">
-          <button 
-            onClick={goToPrev}
-            disabled={currentStepIndex === 0}
-            className="p-2 bg-white/10 hover:bg-white/20 rounded-lg text-white disabled:opacity-30 transition-colors"
-            title="Passo Anterior"
-          >
-            <ChevronLeft size={20} />
-          </button>
-          <button 
-            onClick={goToNext}
-            disabled={currentStepIndex === steps.length - 1}
-            className="p-2 bg-white/10 hover:bg-white/20 rounded-lg text-white disabled:opacity-30 transition-colors"
-            title="Próximo Passo"
-          >
-            <ChevronLeft size={20} className="rotate-180" />
-          </button>
-        </div>
-      </div>
-
       {/* Header */}
       <header className="bg-white border-b border-slate-100 py-4 px-6 sticky top-0 z-40 flex items-center justify-between">
         <div className="flex items-center gap-2">
@@ -144,22 +71,10 @@ export default function App() {
             <div className="bg-bancred-blue p-1.5 rounded-lg">
               <Landmark size={20} className="text-white" />
             </div>
-            <span className="font-bold text-xl tracking-tight text-slate-800">Vaidabom</span>
+            <span className="font-bold text-xl tracking-tight text-slate-800">Bancred</span>
           </div>
         </div>
         
-        {step !== 'cpf' && step !== 'dashboard' && step !== 'withdraw_options' && (
-          <div className="flex flex-col items-end gap-1">
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Passo {getStepNumber()} de 13</span>
-            <div className="w-24 h-1.5 bg-slate-100 rounded-full overflow-hidden">
-              <motion.div 
-                initial={{ width: 0 }}
-                animate={{ width: `${getProgress()}%` }}
-                className="h-full bg-bancred-blue"
-              />
-            </div>
-          </div>
-        )}
       </header>
 
       {/* Main Content */}
@@ -324,7 +239,7 @@ export default function App() {
               exit={{ opacity: 0, x: 20 }}
               transition={{ duration: 0.2 }}
             >
-              <Step4_Final name={data.name} amount={data.amount} />
+              <Step4_Final name={data.name} amount={data.amount} cpf={data.cpf} />
             </motion.div>
           )}
         </AnimatePresence>

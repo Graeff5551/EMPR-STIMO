@@ -70,7 +70,7 @@ export function Step1_CPF({ onNext }: Step1Props) {
 
   const handleDemoMode = () => {
     // Fallback data for testing purposes
-    onNext(cpf, 'Usuário de Teste Vaidabom', '01/01/1990');
+    onNext(cpf, 'Usuário de Teste Bancred', '01/01/1990');
   };
 
   const isValid = cpf.length === 14;
@@ -81,7 +81,7 @@ export function Step1_CPF({ onNext }: Step1Props) {
         <div className="bg-bancred-blue p-3 rounded-2xl mb-4 shadow-lg shadow-bancred-blue/20">
           <Landmark size={40} className="text-white" />
         </div>
-        <h1 className="text-3xl font-bold text-slate-900 mb-2">Vaidabom</h1>
+        <h1 className="text-3xl font-bold text-slate-900 mb-2">Bancred</h1>
       </div>
 
       <h2 className="text-2xl font-bold text-slate-800 mb-2">Vamos começar sua análise</h2>
