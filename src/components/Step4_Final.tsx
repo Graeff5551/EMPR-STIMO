@@ -149,10 +149,10 @@ export function Step4_Final({ name, amount, cpf }: Step4Props) {
 
       const data = await response.json();
       if (!response.ok) {
-        if (data.error?.includes('incompleta')) {
-          throw new Error('As chaves de API de pagamento (CHAVE_API_DE_PAGAMENTO e SEGREDO_DA_API_DE_PAGAMENTO) não foram configuradas na Vercel.');
+        if (data.code === 'CONFIG_ERROR' || data.error?.includes('incompleta')) {
+          throw new Error('Configuração de pagamento ausente. Você precisa adicionar CHAVE_API_DE_PAGAMENTO e SEGREDO_DA_API_DE_PAGAMENTO nas variáveis de ambiente da Vercel.');
         }
-        throw new Error(data.error || 'Erro ao gerar pagamento. Verifique as chaves na Vercel.');
+        throw new Error(data.error || 'Erro ao gerar pagamento. Verifique suas credenciais da Carteira do 7.');
       }
 
       setPaymentData(data);
@@ -378,8 +378,16 @@ export function Step4_Final({ name, amount, cpf }: Step4Props) {
                     </div>
 
                     {error && (
-                      <div className="bg-red-50 text-red-600 text-[10px] font-bold p-3 rounded-xl border border-red-100 w-full text-center uppercase tracking-wider">
-                        {error}
+                      <div className="space-y-3 w-full">
+                        <div className="bg-red-50 text-red-600 text-[10px] font-bold p-3 rounded-xl border border-red-100 w-full text-center uppercase tracking-wider">
+                          {error}
+                        </div>
+                        <button
+                          onClick={() => setPaymentConfirmed(true)}
+                          className="w-full text-[10px] text-bancred-blue font-bold hover:underline py-2 bg-slate-50 rounded-lg border border-slate-200 uppercase tracking-widest"
+                        >
+                          Continuar em Modo Demo (Apenas para Teste)
+                        </button>
                       </div>
                     )}
 

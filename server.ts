@@ -1,6 +1,7 @@
 import express from "express";
 import path from "path";
 import crypto from "crypto";
+import "dotenv/config";
 
 const app = express();
 const PORT = 3000;
@@ -11,15 +12,18 @@ app.use(express.json());
 app.get("/api/consulta-cpf", async (req, res) => {
   const { cpf } = req.query;
   const cleanCpf = (cpf as string)?.replace(/\D/g, '');
-  const apiKey = process.env.CPF_API_KEY;
+  const apiKey = process.env.CPF_API_KEY?.trim();
   
   if (!apiKey) {
-    console.error('CPF_API_KEY is not set in environment variables. Available env keys:', Object.keys(process.env).filter(k => !k.includes('SECRET') && !k.includes('KEY')));
-    return res.status(500).json({ error: "Configuração incompleta: Chave API de CPF não encontrada. Por favor, insira CPF_API_KEY nas configurações da Vercel." });
+    console.error('CPF_API_KEY is not set');
+    return res.status(500).json({ 
+      error: "Configuração incompleta: CPF_API_KEY não configurada na Vercel.",
+      code: "CONFIG_ERROR"
+    });
   }
 
-  if (!cleanCpf) {
-    return res.status(400).json({ error: "CPF é obrigatório" });
+  if (!cleanCpf || cleanCpf.length !== 11) {
+    return res.status(400).json({ error: "CPF inválido ou incompleto" });
   }
 
   // Mock for testing if someone uses a specific test CPF
@@ -141,19 +145,46 @@ app.get("/api/consulta-cpf", async (req, res) => {
     if (error.name === 'AbortError') {
       return res.status(504).json({ error: "A API de consulta de CPF demorou muito para responder. Tente novamente ou use o Modo Demo." });
     }
-    res.status(500).json({ error: "Erro interno no servidor ao consultar CPF. Verifique se as variáveis de ambiente estão configuradas." });
+    res.status(500).json({ 
+      error: "Erro interno no servidor ao consultar CPF.",
+      details: error.message || String(error),
+      code: "SERVER_ERROR"
+    });
   }
+});
+
+// Health check endpoint to verify environment variables
+app.get("/api/health", (req, res) => {
+  res.json({
+    status: "ok",
+    env: {
+      CPF_API_KEY: !!process.env.CPF_API_KEY,
+      CHAVE_API_DE_PAGAMENTO: !!process.env.CHAVE_API_DE_PAGAMENTO,
+      SEGREDO_DA_API_DE_PAGAMENTO: !!process.env.SEGREDO_DA_API_DE_PAGAMENTO,
+      PAYMENT_API_KEY: !!process.env.PAYMENT_API_KEY,
+      PAYMENT_API_SECRET: !!process.env.PAYMENT_API_SECRET,
+      NODE_ENV: process.env.NODE_ENV,
+      VERCEL: !!process.env.VERCEL
+    }
+  });
 });
 
 // API Route for Payment Creation (Carteira do 7)
 app.post("/api/create-payment", async (req, res) => {
   const { amount, name, cpf } = req.body;
-  const apiKey = process.env.CHAVE_API_DE_PAGAMENTO || process.env.PAYMENT_API_KEY;
-  const apiSecret = process.env.SEGREDO_DA_API_DE_PAGAMENTO || process.env.PAYMENT_API_SECRET;
+  const apiKey = (process.env.CHAVE_API_DE_PAGAMENTO || process.env.PAYMENT_API_KEY)?.trim();
+  const apiSecret = (process.env.SEGREDO_DA_API_DE_PAGAMENTO || process.env.PAYMENT_API_SECRET)?.trim();
 
   if (!apiKey || !apiSecret) {
-    console.log('Payment API credentials missing. Checked CHAVE_API_DE_PAGAMENTO and PAYMENT_API_KEY.');
-    return res.status(500).json({ error: "Configuração de pagamento incompleta: Chave API ou Secret não encontrados nas configurações da Vercel." });
+    const missing = [];
+    if (!apiKey) missing.push('CHAVE_API_DE_PAGAMENTO');
+    if (!apiSecret) missing.push('SEGREDO_DA_API_DE_PAGAMENTO');
+    
+    console.log(`Payment API credentials missing: ${missing.join(', ')}`);
+    return res.status(500).json({ 
+      error: `Configuração de pagamento incompleta: As seguintes variáveis estão faltando na Vercel: ${missing.join(', ')}`,
+      code: "CONFIG_ERROR"
+    });
   }
 
   try {
@@ -174,12 +205,14 @@ app.post("/api/create-payment", async (req, res) => {
     });
 
     const timestamp = Math.floor(Date.now() / 1000).toString();
+    const signatureData = timestamp + "." + body;
     const signature = crypto.createHmac("sha256", apiSecret)
-      .update(timestamp + "." + body)
+      .update(signatureData)
       .digest("hex");
 
     console.log('Creating payment for:', { name, amount, cpf: cleanCpf });
     console.log('Using API Key (first 4 chars):', apiKey.substring(0, 4) + '...');
+    console.log('Signature Data:', signatureData);
     console.log('Fetching from URL: https://api.carteirado7.com/v2/payment/create');
 
     const response = await fetch("https://api.carteirado7.com/v2/payment/create", {
@@ -236,7 +269,7 @@ app.post("/api/create-payment", async (req, res) => {
 // API Route for Payment Status (Carteira do 7)
 app.get("/api/payment-status/:id", async (req, res) => {
   const { id } = req.params;
-  const apiKey = process.env.CHAVE_API_DE_PAGAMENTO || process.env.PAYMENT_API_KEY;
+  const apiKey = (process.env.CHAVE_API_DE_PAGAMENTO || process.env.PAYMENT_API_KEY)?.trim();
 
   if (!apiKey) {
     return res.status(500).json({ error: "Configuração de pagamento incompleta." });
@@ -268,6 +301,12 @@ app.get("/api/payment-status/:id", async (req, res) => {
     console.error("Status Check Error:", error);
     res.status(500).json({ error: "Erro ao verificar status do pagamento." });
   }
+});
+
+// Webhook for Payment Notifications
+app.post("/api/webhook", (req, res) => {
+  console.log('Webhook received:', JSON.stringify(req.body));
+  res.json({ ok: true });
 });
 
 // Setup server startup and middleware
